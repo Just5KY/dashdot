@@ -67,6 +67,10 @@ const ServerName = styled.span`
   bottom: -3px;
 `;
 
+const StandaloneAppendix = styled(ServerName)`
+  font-size: 3rem;
+`;
+
 const ThemeSwitchContainer = styled.div`
   position: absolute;
   right: 25px;
@@ -158,14 +162,15 @@ const ServerIcon: FC<{ os: string } & Omit<FontAwesomeIconProps, 'icon'>> = ({
 type ServerWidgetProps = {
   loading: boolean;
   data?: OsInfo;
-  override?: Config['override'];
+  config?: Config;
 };
 
-const ServerWidget: FC<ServerWidgetProps> = ({ loading, data, override }) => {
+const ServerWidget: FC<ServerWidgetProps> = ({ loading, data, config }) => {
   const isMobile = useIsMobile();
   const [darkMode, setDarkMode] = useSetting('darkMode');
   const [uptime, setUptime] = useState(0);
 
+  const override = config?.override;
   const days = Math.floor(uptime / (24 * 60 * 60));
   const hours = Math.floor((uptime % (24 * 60 * 60)) / (60 * 60));
   const minutes = Math.floor((uptime % (60 * 60)) / 60);
@@ -233,8 +238,9 @@ const ServerWidget: FC<ServerWidgetProps> = ({ loading, data, override }) => {
     () => window.location.hostname.split('.').slice(-2).join('.'),
     []
   );
-  const distro = override?.distro ?? data?.distro ?? '';
-  const platform = override?.platform ?? data?.platform ?? '';
+  const distro = data?.distro ?? '';
+  const platform = data?.platform ?? '';
+  const os = override?.os ?? `${distro} ${data?.release ?? ''}`;
 
   return (
     <Container>
@@ -254,8 +260,14 @@ const ServerWidget: FC<ServerWidgetProps> = ({ loading, data, override }) => {
       </ThemeSwitchContainer>
 
       <Heading>
-        <Appendix>dash.</Appendix>
-        <ServerName>{domain}</ServerName>
+        {config?.disable_host ? (
+          <StandaloneAppendix>dash.</StandaloneAppendix>
+        ) : (
+          <>
+            <Appendix>dash.</Appendix>
+            <ServerName>{domain}</ServerName>
+          </>
+        )}
       </Heading>
 
       <ContentContainer>
@@ -265,7 +277,7 @@ const ServerWidget: FC<ServerWidgetProps> = ({ loading, data, override }) => {
           infos={[
             {
               label: 'OS',
-              value: `${distro} ${override?.release ?? data?.release ?? ''}`,
+              value: os,
             },
             {
               label: 'Arch',
@@ -278,8 +290,11 @@ const ServerWidget: FC<ServerWidgetProps> = ({ loading, data, override }) => {
         {!isMobile && (
           <ServerIconContainer>
             <SkeletonContent width={120} height={120} borderRadius='15px'>
-              {distro != null && platform != null && (
-                <ServerIcon os={(distro + platform).toLowerCase()} size='7x' />
+              {(override?.os || (distro != null && platform != null)) && (
+                <ServerIcon
+                  os={(override?.os ?? distro + platform).toLowerCase()}
+                  size='7x'
+                />
               )}
             </SkeletonContent>
           </ServerIconContainer>

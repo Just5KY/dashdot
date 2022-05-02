@@ -7,7 +7,6 @@ import {
   StorageInfo,
 } from 'dashdot-shared';
 import si from 'systeminformation';
-import util from 'util';
 import { CONFIG } from './config';
 
 let INFO_SAVE: HardwareInfo | null = null;
@@ -28,27 +27,27 @@ export const getStaticServerInfo = async (): Promise<ServerInfo> => {
     };
 
     const cpu: CpuInfo = {
-      manufacturer: cpuInfo.manufacturer,
-      brand: cpuInfo.brand,
-      speed: cpuInfo.speed,
+      brand: cpuInfo.manufacturer,
+      model: cpuInfo.brand,
       cores: cpuInfo.physicalCores,
       threads: cpuInfo.cores,
+      frequency: cpuInfo.speed,
     };
 
     const ram: RamInfo = {
-      total: memInfo.total,
+      size: memInfo.total,
       layout: memLayout.map(({ manufacturer, type, clockSpeed }) => ({
-        manufacturer: manufacturer,
+        brand: manufacturer,
         type: type,
-        clockSpeed: clockSpeed ?? undefined,
+        frequency: clockSpeed ?? undefined,
       })),
     };
 
     const storage: StorageInfo = {
       layout: diskLayout.map(({ size, type, vendor }) => ({
+        brand: vendor,
         size,
         type,
-        vendor,
       })),
     };
 
@@ -58,16 +57,6 @@ export const getStaticServerInfo = async (): Promise<ServerInfo> => {
       ram,
       storage,
     };
-
-    console.log(
-      'Static Server Info Gathered: ',
-      util.inspect(INFO_SAVE, { showHidden: false, depth: null, colors: true })
-    );
-
-    console.log(
-      'Config',
-      util.inspect(CONFIG, { showHidden: false, depth: null, colors: true })
-    );
   }
 
   return {

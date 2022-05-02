@@ -21,9 +21,10 @@ services:
     stdin_open: true
     tty: true
     restart: unless-stopped
+    privileged: true
     environment:
-      - DASHDOT_OVERRIDE_DISTRO=Test Server
-      - DASHDOT_OVERRIDE_RELEASE=0.0.0
+      - DASHDOT_OVERRIDE_OS=Ubuntu 1.2.3
+      - DASHDOT_DISABLE_TILT=true
     ports:
       - '3001:3001'
     volumes:

@@ -1,9 +1,9 @@
 export type CpuInfo = {
-  manufacturer: string;
   brand: string;
-  speed: number;
+  model: string;
   cores: number;
   threads: number;
+  frequency: number;
 };
 export type CpuLoad = {
   core: number;
@@ -11,20 +11,20 @@ export type CpuLoad = {
 }[];
 
 export type RamInfo = {
-  total: number;
+  size: number;
   layout: {
+    brand?: string;
     type?: string;
-    manufacturer?: string;
-    clockSpeed?: number;
+    frequency?: number;
   }[];
 };
 export type RamLoad = number;
 
 export type StorageInfo = {
   layout: {
-    type: string;
-    vendor: string;
+    brand: string;
     size: number;
+    type: string;
   }[];
 };
 export type StorageLoad = number;
@@ -47,11 +47,24 @@ export type HardwareInfo = {
 
 export type Config = {
   port: number;
+  disable_tilt: boolean;
+  disable_host: boolean;
+  os_widget_enable: boolean;
+  os_widget_grow: number;
+  cpu_widget_enable: boolean;
+  cpu_widget_grow: number;
+  cpu_shown_datapoints: number;
+  cpu_poll_interval: number;
+  ram_widget_enable: boolean;
+  ram_widget_grow: number;
+  ram_shown_datapoints: number;
+  ram_poll_interval: number;
+  storage_widget_enable: boolean;
+  storage_widget_grow: number;
+  storage_poll_interval: number;
   override: {
-    distro?: string;
-    release?: string;
+    os?: string;
     arch?: string;
-    platform?: string;
     cpu_brand?: string;
     cpu_model?: string;
     cpu_cores?: number;
@@ -60,21 +73,21 @@ export type Config = {
     ram_brand?: string;
     ram_size?: number;
     ram_type?: string;
-    ram_speed?: number;
-    storage_vendor_1?: string;
-    storage_capacity_1?: number;
+    ram_frequency?: number;
+    storage_brand_1?: string;
+    storage_size_1?: number;
     storage_type_1?: string;
-    storage_vendor_2?: string;
-    storage_capacity_2?: number;
+    storage_brand_2?: string;
+    storage_size_2?: number;
     storage_type_2?: string;
-    storage_vendor_3?: string;
-    storage_capacity_3?: number;
+    storage_brand_3?: string;
+    storage_size_3?: number;
     storage_type_3?: string;
-    storage_vendor_4?: string;
-    storage_capacity_4?: number;
+    storage_brand_4?: string;
+    storage_size_4?: number;
     storage_type_4?: string;
-    storage_vendor_5?: string;
-    storage_capacity_5?: number;
+    storage_brand_5?: string;
+    storage_size_5?: number;
     storage_type_5?: string;
   };
 };
