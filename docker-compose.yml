@@ -1,3 +1,6 @@
+# !! Attention !!
+# This is a docker-compose file used ONLY for the dev environment and can not be used for production.
+# If you need instructions on how to run dashdot, please have a look at the README.md file in the root of the project.
 version: '3.5'
 
 services:
@@ -23,10 +26,11 @@ services:
     restart: unless-stopped
     privileged: true
     environment:
-      - DASHDOT_OVERRIDE_OS=Ubuntu 1.2.3
       - DASHDOT_DISABLE_TILT=true
+      - DASHDOT_ENABLE_CPU_TEMPS=true
     ports:
       - '3001:3001'
     volumes:
       - ./backend:/app/backend
-      - ./common:/app/common
+      - ./shared:/app/shared
+      - /etc/os-release:/etc/os-release:ro

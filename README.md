@@ -35,7 +35,7 @@ It is intended to be used for smaller VPS and private servers.
 
 **dash.** is a open-source project, so any contribution is highly appreciated.
 If you are interested in further developing this project, have a look at the
-[Contributing](#Contributing) section of this readme.
+[Contributing](#Contributing) section of this README.
 
 In case you want to financially support this project, you can [donate here](https://paypal.me/itsMaurice).
 
@@ -54,23 +54,25 @@ You can run dashdot from a docker container, or build it yourself.
 ## Docker
 
 Images are hosted on
-[docker.io](https://hub.docker.com/repository/docker/mauricenino/dashdot),
-so you can easily use them with `docker` or other container engines
+[DockerHub](https://hub.docker.com/r/mauricenino/dashdot),
+and are available for both AMD64 and ARM devices.
 
 ```bash
 > docker container run -it \
   -p 80:3001 \
   --privileged \
-  --name dashdot \
   mauricenino/dashdot
 ```
 
 > Note: The `--privileged` flag is needed to correctly determine the memory info.
+<!-- -->
+> Note: If you want to display the host OS information, you need to create a volume
+> mount for `/etc/os-release:/etc/os-release:ro`
 
 You can configure your Docker-installed dashboard via environment variables
 inside the container.
-You can pass them by specifying them in your custom Dockerfile, or via the
-`--env` flag.
+You can pass them by specifying them in your custom `Dockerfile`, in your `docker-compose.yml`,
+or via the `--env` flag.
 
 ```bash
 > docker container run -it \
@@ -82,7 +84,7 @@ You can pass them by specifying them in your custom Dockerfile, or via the
   mauricenino/dashdot
 ```
 
-To read more about configuration options, you cam visit [the configuration section](#Configuration).
+To read more about configuration options, you can visit [the configuration section](#Configuration).
 
 ## Git
 
@@ -112,17 +114,18 @@ When done, you can run the dashboard by executing:
 You can configure your Git-installed dashboard via environment variables.
 
 ```bash
+> export DASHDOT_PORT="8080"
 > export DASHDOT_OVERRIDE_DISTRO="Ubuntu"
 > yarn start
 ```
 
-To read more about configuration options, you cam visit [the configuration section](#Configuration-Options).
+To read more about configuration options, you can visit [the configuration section](#Configuration-Options).
 
 # Configuration Options
 
 The following configuration options are available.
 
-If you dont know how to set them, look up the section for your type of installment
+If you don't know how to set them, look up the section for your type of installment
 (Docker or Git).
 
 <!-- markdownlint-disable -->
@@ -131,6 +134,7 @@ Variable | Description | Type | Default Value
 `DASHDOT_PORT` | The port where the express backend is running (the backend serves the frontend, so it is the same port for both) | number | `3001`
 `DASHDOT_DISABLE_TILT` | If you want to disable the tilt effect when hovering over the widgets with your mouse | boolean | `false`
 `DASHDOT_DISABLE_HOST` | If you want to hide the host part in the server widget (e.g. `dash.mauz.io` -> `dash.`) | boolean | `false`
+`DASHDOT_ENABLE_CPU_TEMP` | If you want to show the CPU temperature in the graph. This will probably not work on a VPS, so you need to try it on your own if this works. For home servers it might work just fine | boolean | `true`
 `DASHDOT_OS_WIDGET_ENABLE` | To show/hide the OS widget | boolean | `true`
 `DASHDOT_OS_WIDGET_GROW` | To adjust the relative size of the OS widget | number | `1`
 `DASHDOT_CPU_WIDGET_ENABLE` | To show/hide the Processor widget | boolean | `true`
@@ -150,48 +154,30 @@ Variable | Description | Type | Default Value
 `DASHDOT_OVERRIDE_CPU_MODEL` | | string |
 `DASHDOT_OVERRIDE_CPU_CORES` | | number |
 `DASHDOT_OVERRIDE_CPU_THREADS` | | number |
-`DASHDOT_OVERRIDE_CPU_FREQUENCY` | | number |
+`DASHDOT_OVERRIDE_CPU_FREQUENCY` | Number needs to be passed in GHz (e.g. `2.8`) | number |
 `DASHDOT_OVERRIDE_RAM_BRAND` | | string |
-`DASHDOT_OVERRIDE_RAM_SIZE` | | number |
+`DASHDOT_OVERRIDE_RAM_SIZE` | Number needs to be passed in bytes (e.g. `34359738368` for 32 GB, because it is `32 * 1024 * 1024 * 1024`) | number |
 `DASHDOT_OVERRIDE_RAM_TYPE` | | string |
 `DASHDOT_OVERRIDE_RAM_FREQUENCY` | | number |
 `DASHDOT_OVERRIDE_STORAGE_BRAND_[1-5]` | Use a suffix of 1, 2, 3, 4 or 5 for the respective drives | string |
-`DASHDOT_OVERRIDE_STORAGE_SIZE_[1-5]` | Use a suffix of 1, 2, 3, 4 or 5 for the respective drives | number |
+`DASHDOT_OVERRIDE_STORAGE_SIZE_[1-5]` | Use a suffix of 1, 2, 3, 4 or 5 for the respective drives. Number needs to be passed in bytes (e.g. `34359738368` for 32 GB, because it is `32 * 1024 * 1024 * 1024`) | number |
 `DASHDOT_OVERRIDE_STORAGE_TYPE_[1-5]` | Use a suffix of 1, 2, 3, 4 or 5 for the respective drives | string |
 <!-- markdownlint-enable -->
 
 # Contributing
 
 The simplest way of contributing is to create
-[a new issue](https://github.com/MauriceNino/dashdot/issues) with a
-feature-request or bug-report.
+[a new issue](https://github.com/MauriceNino/dashdot/issues) using the
+corresponding templates for feature-requests and bug-reports.
 
 If you are able to, you can also create a
 [pull request](https://github.com/MauriceNino/dashdot/pulls) to add the wanted
-features or fix the found bug.
+features or fix the found bug yourself. Any contribution is highly appreciated!
 
 To start working on this project, you can start by going through the
-Install - Git guide, but omit the `yarn start` part.
+Install - Git guide, but instead of running `yarn start`, you can run the
+project in dev-mode using `yarn run dev`. This will start the frontend and
+backend separately using docker-compose (docker & docker-compose will be needed).
 
-When done, you can run the project in dev-mode using `yarn run dev`.
-This will start the frontend and backend separately using docker-compose
-(docker & docker-compose will be needed).
-
-Development is done on the `dev` branch, so please use that as the base branch
+> Note: Development is done on the `dev` branch, so please use that as the base branch
 in your work.
-
-## Backend
-
-- [Express](https://github.com/expressjs/express)
-- [Rxjs](https://github.com/ReactiveX/rxjs)
-- [Socket.io](https://github.com/socketio/socket.io)
-- [Typescript](https://github.com/microsoft/TypeScript)
-
-## Frontend
-
-- [React](https://github.com/facebook/react)
-- [Styled Components](https://github.com/styled-components/styled-components)
-- [Antd](https://github.com/ant-design/ant-design/)
-- [Nivo](https://github.com/plouc/nivo)
-- [Fontawesome](https://github.com/FortAwesome/Font-Awesome)
-- [Typescript](https://github.com/microsoft/TypeScript)
