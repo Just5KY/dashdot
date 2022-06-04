@@ -7,7 +7,8 @@ services:
   dash:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
+      target: dev
     working_dir: /app
     tty: true
     command: yarn run serve
@@ -21,6 +22,4 @@ services:
     volumes:
       - ./:/app
       - /etc/os-release:/etc/os-release:ro
-      - type: bind
-        source: ${DEFAULT_INTERFACE_PATH}
-        target: /mnt/eth0
+      - /proc/1/ns/net:/mnt/host_ns_net:ro

@@ -3,6 +3,11 @@ kind: pipeline
 type: docker
 name: CI
 
+trigger:
+  event:
+    exclude:
+      - tag
+
 steps:
   # DEPENDENCIES #
   - name: dependencies
@@ -45,7 +50,7 @@ steps:
       - yarn build
 
   # DEV BUILD #
-  - name: build & deploy to dockerhub (dev)
+  - name: build & release (dockerhub) (dev)
     image: crazymax/docker:latest
     when:
       event: push
@@ -60,8 +65,17 @@ steps:
       - echo $DOCKER_ACCESS_KEY | docker login -u mauricenino --password-stdin
       - docker buildx create --name builder --driver docker-container --use
       - docker buildx inspect --bootstrap --builder builder
-      - docker buildx build --platform linux/amd64 -t mauricenino/dashdot:dev -o type=registry .
-      - docker logout
+      - docker buildx build
+        --platform linux/amd64
+        --target prod
+        --label org.opencontainers.image.title="dash."
+        --label org.opencontainers.image.description="dash. - a modern server dashboard"
+        --label org.opencontainers.image.authors="MauriceNino <mauriceprivat98@gmail.com>"
+        --label org.opencontainers.image.url=https://github.com/MauriceNino/dashdot
+        --label org.opencontainers.image.source=https://github.com/MauriceNino/dashdot
+        --label org.opencontainers.image.licenses=MIT
+        -o type=registry
+        -t mauricenino/dashdot:dev .
   - name: update & deploy server files (dev)
     image: docker/compose
     when:
@@ -77,25 +91,40 @@ steps:
       - cd /server && ./start.sh dashdot
 
   # PROD BUILD #
-  - name: build & deploy to dockerhub (production)
+  - name: build & release (dockerhub & github) (production)
     image: crazymax/docker:latest
     when:
       event: push
       branch: main
     environment:
+      GITHUB_TOKEN:
+        from_secret: GITHUB_TOKEN
       DOCKER_ACCESS_KEY:
         from_secret: DOCKER_ACCESS_KEY
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - |
-        sed 's/.*"version": "\(.*\)".*/\1/;t;d' ./package.json > package.version
+      - apk add git nodejs yarn
+      - yarn semantic-release -d | sed -n 's/.*The next release version is \([0-9]\+\.[0-9]\+\.[0-9]\+\)/\1/p' > package.version
+      - 'echo "Next Version: $(cat package.version)"'
+      - '[ -s package.version ] || exit 1'
       - echo $DOCKER_ACCESS_KEY | docker login -u mauricenino --password-stdin
       - docker buildx create --name builder --driver docker-container --use
       - docker buildx inspect --bootstrap --builder builder
-      - docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 -t mauricenino/dashdot:latest -t mauricenino/dashdot:$(cat package.version) -o type=registry .
-      - docker logout
+      - docker buildx build
+        --platform linux/amd64,linux/arm/v7,linux/arm64/v8
+        --target prod
+        --label org.opencontainers.image.title="dash."
+        --label org.opencontainers.image.description="dash. - a modern server dashboard"
+        --label org.opencontainers.image.authors="MauriceNino <mauriceprivat98@gmail.com>"
+        --label org.opencontainers.image.url=https://github.com/MauriceNino/dashdot
+        --label org.opencontainers.image.source=https://github.com/MauriceNino/dashdot
+        --label org.opencontainers.image.licenses=MIT
+        -o type=registry
+        -t mauricenino/dashdot:$(cat package.version)
+        -t mauricenino/dashdot:latest .
+      - yarn semantic-release
   - name: update & deploy server files
     image: docker/compose
     when:
@@ -110,17 +139,18 @@ steps:
       - docker image pull mauricenino/dashdot:latest
       - cd /server && ./start.sh dashdot
 
-  # CREATE RELEASE NOTES #
-  - name: create release notes
-    image: timbru31/node-alpine-git:latest
+  # CLEANUP #
+  - name: cleanup
+    image: crazymax/docker:latest
     when:
-      event: tag
-    environment:
-      GITHUB_TOKEN:
-        from_secret: GITHUB_TOKEN
+      status:
+        - failure
+        - success
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
     commands:
-      - yarn
-      - yarn semantic-release
+      - docker logout
 
 volumes:
   - name: dockersock
@@ -133,13 +163,11 @@ volumes:
 ---
 kind: secret
 name: DOCKER_ACCESS_KEY
-data: ysbzIhceuQjxnBZ7kRt63CswtG85WTCiCBFPCM8wmV9qBQTS9kGPktIqw1wevm1O0U2l1pTWl7wt2e7D+a462Q==
+data: aRlMTaj5z6fMgCnFDDiLTPakLlcziQvZxw0K8k06ZsIdeGshKPMzMhl4+UoiC4rCaDtsnu0hmcXeIzqP83NQXw==
 ---
 kind: secret
 name: GITHUB_TOKEN
 data: JMpZE0aC5Fau1tDEh+6Huy+yZJF1BqhVAzIm7+Xvfx9vYxHRrPAbh6hZrJzEvEjK9ClGNoPCHJaKmezV3Yrt2qYsARU=
 ---
 kind: signature
-hmac: aad44e85ac79f42c116532462dae095370817085a468ac6487580a1279d2cc1b
-
-...
+hmac: 5780f46081d84a8e92bfe5ce50f9972a8ebf56df02a2c206fa0ccf7b04b5040c
