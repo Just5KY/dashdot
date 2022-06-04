@@ -27,7 +27,7 @@ jobs:
       uses: aormsby/Fork-Sync-With-Upstream-action@v2.3
       with:
         upstream_repository: MauriceNino/dashdot
-        upstream_branch: master
+        upstream_branch: main
         target_branch: master
         #git_pull_rebase_config: true
         # git_pull_args: --ff-only                    # optional arg use, defaults to simple 'pull'
