@@ -6,7 +6,7 @@ on:
   schedule:
      # actually, ~5 minutes is the highest
      # effective frequency you will get
-    - cron:  '0 3 * * 1'
+    - cron:  '0 */8 * * *'
   workflow_dispatch: #run manually
       
 jobs:
