@@ -5,7 +5,7 @@ import * as si from 'systeminformation';
 import { inspect, promisify } from 'util';
 import { CONFIG } from './config';
 import { NET_INTERFACE } from './setup-networking';
-import { getStaticServerInfo } from './static-info';
+import { getStaticServerInfo, runSpeedTest } from './static-info';
 
 const exec = promisify(cexec);
 
@@ -39,81 +39,108 @@ const createBufferedInterval = <R>(
   return buffer.asObservable();
 };
 
-export const cpuObs = createBufferedInterval(
-  'CPU',
-  CONFIG.cpu_shown_datapoints,
-  CONFIG.cpu_poll_interval,
-  async (): Promise<CpuLoad> => {
-    const staticInfo = await getStaticServerInfo();
-    const loads = (await si.currentLoad()).cpus;
+export const getDynamicServerInfo = () => {
+  const cpuObs = createBufferedInterval(
+    'CPU',
+    CONFIG.cpu_shown_datapoints,
+    CONFIG.cpu_poll_interval,
+    async (): Promise<CpuLoad> => {
+      const staticInfo = await getStaticServerInfo();
+      const loads = (await si.currentLoad()).cpus;
 
-    let temps: si.Systeminformation.CpuTemperatureData['cores'] = [];
-    if (CONFIG.enable_cpu_temps) {
-      const threadsPerCore = staticInfo.cpu.threads / staticInfo.cpu.cores;
-      temps = (await si.cpuTemperature()).cores.flatMap(temp =>
-        Array(threadsPerCore).fill(temp)
-      );
+      let temps: si.Systeminformation.CpuTemperatureData['cores'] = [];
+      let mainTemp = 0;
+      if (CONFIG.enable_cpu_temps) {
+        const siTemps = await si.cpuTemperature();
+        const threadsPerCore = staticInfo.cpu.threads / staticInfo.cpu.cores;
+        temps = siTemps.cores.flatMap(temp => Array(threadsPerCore).fill(temp));
+        mainTemp = siTemps.main; // AVG temp of all cores, in case no per-core data is found
+      }
+
+      return loads.map(({ load }, i) => ({
+        load,
+        temp: temps[i] ?? mainTemp,
+        core: i,
+      }));
     }
+  );
 
-    return loads.map(({ load }, i) => ({
-      load,
-      temp: temps[i],
-      core: i,
-    }));
-  }
-);
-
-export const ramObs = createBufferedInterval(
-  'RAM',
-  CONFIG.ram_shown_datapoints,
-  CONFIG.ram_poll_interval,
-  async (): Promise<RamLoad> => {
-    return (await si.mem()).active;
-  }
-);
-
-export const storageObs = createBufferedInterval(
-  'Storage',
-  1,
-  CONFIG.storage_poll_interval,
-  async (): Promise<StorageLoad> => {
-    const data = await si.fsSize();
-    const root = data.find(d => d.mount === '/');
-
-    return root?.used ?? 0;
-  }
-);
-
-let [lastRx, lastTx] = [0, 0];
-
-export const netowrkObs = createBufferedInterval(
-  'Network',
-  CONFIG.network_shown_datapoints,
-  CONFIG.network_poll_interval,
-  async (): Promise<NetworkLoad> => {
-    if (NET_INTERFACE !== 'unknown') {
-      const { stdout } = await exec(
-        `cat /mnt/host_sys/class/net/${NET_INTERFACE}/statistics/rx_bytes;` +
-          `cat /mnt/host_sys/class/net/${NET_INTERFACE}/statistics/tx_bytes;`
-      );
-      const [rx, tx] = stdout.split('\n').map(Number);
-
-      const result = {
-        up: tx - lastTx,
-        down: rx - lastRx,
-      };
-
-      lastRx = rx;
-      lastTx = tx;
-
-      return result;
-    } else {
-      const data = (await si.networkStats())[0];
-
-      return {
-        up: data.tx_sec,
-        down: data.rx_sec,
-      };
+  const ramObs = createBufferedInterval(
+    'RAM',
+    CONFIG.ram_shown_datapoints,
+    CONFIG.ram_poll_interval,
+    async (): Promise<RamLoad> => {
+      return (await si.mem()).active;
     }
-  }
-);
+  );
+
+  const storageObs = createBufferedInterval(
+    'Storage',
+    1,
+    CONFIG.storage_poll_interval,
+    async (): Promise<StorageLoad> => {
+      const sizes = await si.fsSize();
+
+      const filtered = sizes.filter(
+        ({ fs, mount }) => mount.startsWith('/mnt/host_') || fs === 'overlay'
+      );
+
+      return filtered.reduce((acc, { used }) => acc + used, 0);
+    }
+  );
+
+  let [lastRx, lastTx, lastTs] = [0, 0, 0];
+
+  const networkObs = createBufferedInterval(
+    'Network',
+    CONFIG.network_shown_datapoints,
+    CONFIG.network_poll_interval,
+    async (): Promise<NetworkLoad> => {
+      if (NET_INTERFACE !== 'unknown') {
+        const { stdout } = await exec(
+          `cat /internal_mnt/host_sys/class/net/${NET_INTERFACE}/statistics/rx_bytes;` +
+            `cat /internal_mnt/host_sys/class/net/${NET_INTERFACE}/statistics/tx_bytes;`
+        );
+        const [rx, tx] = stdout.split('\n').map(Number);
+        const thisTs = performance.now();
+        const dividend = (thisTs - lastTs) / 1000;
+
+        const result =
+          lastTs === 0
+            ? {
+                up: 0,
+                down: 0,
+              }
+            : {
+                up: (tx - lastTx) / dividend,
+                down: (rx - lastRx) / dividend,
+              };
+
+        lastRx = rx;
+        lastTx = tx;
+        lastTs = thisTs;
+
+        return result;
+      } else {
+        const data = (await si.networkStats())[0];
+
+        return {
+          up: data.tx_sec,
+          down: data.rx_sec,
+        };
+      }
+    }
+  );
+
+  const speedTestObs = interval(CONFIG.speed_test_interval * 60 * 1000).pipe(
+    mergeMap(async () => await runSpeedTest())
+  );
+
+  return {
+    cpu: cpuObs,
+    ram: ramObs,
+    storage: storageObs,
+    network: networkObs,
+    speedTest: speedTestObs,
+  };
+};

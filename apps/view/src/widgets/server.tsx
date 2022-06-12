@@ -16,11 +16,14 @@ import {
   FontAwesomeIcon,
   FontAwesomeIconProps,
 } from '@fortawesome/react-fontawesome';
-import { Button, Switch } from 'antd';
+import { Button } from 'antd';
+import { fromUrl, parseDomain, ParseResultType } from 'parse-domain';
+import { toUnicode } from 'punycode';
 import { FC, useEffect, useMemo, useState } from 'react';
 import styled, { useTheme } from 'styled-components';
-import InfoTable from '../components/info-table';
-import ThemedText from '../components/text';
+import { InfoTable } from '../components/info-table';
+import { ThemedText } from '../components/text';
+import { WidgetSwitch } from '../components/widget-switch';
 import { useIsMobile } from '../services/mobile';
 import { useSetting } from '../services/settings';
 import { toInfoTable } from '../utils/format';
@@ -74,18 +77,6 @@ const StandaloneAppendix = styled(ServerName)`
   font-size: 3rem;
 `;
 
-const ThemeSwitchContainer = styled.div`
-  position: absolute;
-  right: 25px;
-  top: 25px;
-  z-index: 2;
-
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 15px;
-`;
-
 const ButtonsContainer = styled.div`
   display: flex;
   flex-direction: row;
@@ -116,7 +107,7 @@ const SFontAwesomeIcon = styled(FontAwesomeIcon)`
   transform: translate(-50%, -50%);
   font-size: 17rem;
   opacity: 0.05;
-  z-index: -5;
+  pointer-events: none;
 `;
 
 const ServerIcon: FC<{ os: string } & Omit<FontAwesomeIconProps, 'icon'>> = ({
@@ -189,10 +180,17 @@ export const ServerWidget: FC<ServerWidgetProps> = ({ data, config }) => {
     return () => clearInterval(interval);
   }, [data.uptime]);
 
-  const domain = useMemo(
-    () => window.location.hostname.split('.').slice(-2).join('.'),
-    []
-  );
+  const domain = useMemo(() => {
+    const href = window.location.href;
+    const result = parseDomain(fromUrl(href));
+
+    if (result.type === ParseResultType.Listed) {
+      const { domain, topLevelDomains } = result;
+      return [toUnicode(domain ?? ''), ...topLevelDomains].join('.');
+    } else {
+      return undefined;
+    }
+  }, []);
 
   const dateInfos = [
     {
@@ -245,13 +243,14 @@ export const ServerWidget: FC<ServerWidgetProps> = ({ data, config }) => {
         />
       </ButtonsContainer>
 
-      <ThemeSwitchContainer>
-        <ThemedText>Dark Mode</ThemedText>
-        <Switch checked={darkMode} onChange={() => setDarkMode(!darkMode)} />
-      </ThemeSwitchContainer>
+      <WidgetSwitch
+        label='Dark Mode'
+        checked={darkMode}
+        onChange={() => setDarkMode(!darkMode)}
+      />
 
       <Heading>
-        {config?.disable_host ? (
+        {config?.disable_host || !domain ? (
           <StandaloneAppendix>dash.</StandaloneAppendix>
         ) : (
           <>

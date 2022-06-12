@@ -4,10 +4,11 @@ import { FC, useEffect, useRef, useState } from 'react';
 import io from 'socket.io-client';
 import { default as styled } from 'styled-components';
 import { useServerInfo } from '../api/os-info';
-import GlassPane from '../components/glass-pane';
+import { GlassPane } from '../components/glass-pane';
 import { environment } from '../environments/environment';
 import { useIsMobile } from '../services/mobile';
 import { CpuWidget } from '../widgets/cpu';
+import { ErrorWidget } from '../widgets/error';
 import { NetworkWidget } from '../widgets/network';
 import { RamWidget } from '../widgets/ram';
 import { ServerWidget } from '../widgets/server';
@@ -35,7 +36,8 @@ const itemVariants: Variants = {
 const FlexContainer = styled(motion.div)<{ mobile: boolean }>`
   width: ${({ mobile }) => (mobile ? 'calc(100vw - 50px)' : '92vw')};
   min-height: ${({ mobile }) => (mobile ? 'calc(100vh - 50px)' : '86vh')};
-  margin: ${({ mobile }) => (mobile ? '50px' : '7vh')} auto 0 auto;
+  margin: ${({ mobile }) => (mobile ? '50px' : '7vh')} auto
+    ${({ mobile }) => (mobile ? '50px' : '7vh')} auto;
 
   display: flex;
   flex-flow: row wrap;
@@ -43,10 +45,25 @@ const FlexContainer = styled(motion.div)<{ mobile: boolean }>`
   row-gap: ${({ mobile }) => (mobile ? '40px' : '70px')};
 `;
 
+const ErrorContainer = styled(motion.div)<{ mobile: boolean }>`
+  width: ${({ mobile }) => (mobile ? 'calc(100vw - 50px)' : '92vw')};
+  min-height: ${({ mobile }) => (mobile ? 'calc(100vh - 50px)' : '86vh')};
+  margin: ${({ mobile }) => (mobile ? '50px' : '7vh')} auto
+    ${({ mobile }) => (mobile ? '50px' : '7vh')} auto;
+
+  display: flex;
+  flex-flow: row wrap;
+  column-gap: 40px;
+  row-gap: ${({ mobile }) => (mobile ? '40px' : '70px')};
+
+  justify-content: center;
+  align-items: center;
+`;
+
 export const MainWidgetContainer: FC = () => {
   const isMobile = useIsMobile();
 
-  const serverInfo = useServerInfo();
+  const [serverInfo, reloadServerInfo] = useServerInfo();
   const osData = serverInfo.data?.os;
   const cpuData = serverInfo.data?.cpu;
   const ramData = serverInfo.data?.ram;
@@ -102,8 +119,47 @@ export const MainWidgetContainer: FC = () => {
     socket.on('storage-load', data => {
       setStorageLoad(data);
     });
-  }, []);
 
+    return () => {
+      socket.close();
+    };
+  }, [serverInfo.data]);
+
+  const errors = [
+    {
+      condition: !!serverInfo.error,
+      text: 'Error loading the static data!',
+    },
+    {
+      condition: !config,
+      text: 'Invalid or incomplete static data loaded!',
+    },
+    {
+      condition: serverInfo.loading,
+      text: 'Loading static data...',
+    },
+  ];
+  const error = errors.find(e => e.condition);
+
+  if (error) {
+    return (
+      <ErrorContainer
+        variants={containerVariants}
+        initial='initial'
+        animate='animate'
+        exit='exit'
+        mobile={isMobile}
+      >
+        <ErrorWidget
+          errorText={error.text}
+          onReload={reloadServerInfo}
+          loading={serverInfo.loading}
+        />
+      </ErrorContainer>
+    );
+  }
+
+  // Can never happen
   if (!config) {
     return null;
   }
@@ -163,7 +219,6 @@ export const MainWidgetContainer: FC = () => {
             layoutId={`widget_${widget}`}
             grow={currentConfig.grow}
             minWidth={currentConfig.minWidth}
-            enableTilt={config?.enable_tilt}
           >
             <currentConfig.Widget
               // @ts-ignore

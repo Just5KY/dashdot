@@ -1,3 +1,56 @@
+# [3.2.0](https://github.com/MauriceNino/dashdot/compare/v3.1.3...v3.2.0) (2022-06-12)
+
+
+### Bug Fixes
+
+* **api:** calculate network speed in relation to time diff ([55ec6b2](https://github.com/MauriceNino/dashdot/commit/55ec6b22d0668a5f31ea3a959586d35423a2ed5c))
+* **api:** match any mounts that are present at /mnt/host_* ([810e5a6](https://github.com/MauriceNino/dashdot/commit/810e5a6dac7e71ee28fd388bb0570d0378bba7ea)), closes [#108](https://github.com/MauriceNino/dashdot/issues/108)
+
+
+### Features
+
+* **view:** show error widget when static data cant be loaded ([89d9fcc](https://github.com/MauriceNino/dashdot/commit/89d9fcc3ab976fc39e40f53a271984453298c0bd))
+
+## [3.1.3](https://github.com/MauriceNino/dashdot/compare/v3.1.2...v3.1.3) (2022-06-09)
+
+
+### Bug Fixes
+
+* reduced docker image size ([d29ed54](https://github.com/MauriceNino/dashdot/commit/d29ed546aa9b4273191c671282a5c1d9873e9d34))
+
+## [3.1.2](https://github.com/MauriceNino/dashdot/compare/v3.1.1...v3.1.2) (2022-06-09)
+
+
+### Bug Fixes
+
+* **api:** read temperature from main if no per-core data is found ([523e7a1](https://github.com/MauriceNino/dashdot/commit/523e7a1e768e55886832c6fe876dcd138d12e577)), closes [#107](https://github.com/MauriceNino/dashdot/issues/107)
+* **view:** error on domains with multiple subdomains ([756774b](https://github.com/MauriceNino/dashdot/commit/756774b9ecf54b76bd074270e737c122447b7fb9))
+* **view:** mobile browser address bar not hiding on scroll ([7a32a7c](https://github.com/MauriceNino/dashdot/commit/7a32a7cdaf478009d3c08b51231720e8660635f1))
+* **view:** remove old CRA app name in manifest ([dd8e0a6](https://github.com/MauriceNino/dashdot/commit/dd8e0a617a1a4837d41103560b53b0b604206188))
+* **view:** server image not shown on firefox ([adb6607](https://github.com/MauriceNino/dashdot/commit/adb660795ab51ddf739b5c0b931b138ab1555994))
+
+## [3.1.1](https://github.com/MauriceNino/dashdot/compare/v3.1.0...v3.1.1) (2022-06-09)
+
+
+### Bug Fixes
+
+* **api:** invalid iface speed conversion for non-docker interface ([2a1425f](https://github.com/MauriceNino/dashdot/commit/2a1425f7fd402a006855b8cbb53cd9f8d1aedfe0)), closes [#105](https://github.com/MauriceNino/dashdot/issues/105)
+
+# [3.1.0](https://github.com/MauriceNino/dashdot/compare/v3.0.0...v3.1.0) (2022-06-08)
+
+
+### Bug Fixes
+
+* **api:** exclude /etc from mounts ([bb0c2aa](https://github.com/MauriceNino/dashdot/commit/bb0c2aa44c3d933f158ef711ec0ed1f9d3448cd9))
+* **api:** get sizes of all drives instead of just the main one ([356cacd](https://github.com/MauriceNino/dashdot/commit/356cacd47ac4f947c93e9a216dc5fbc05de8bbcb)), closes [#59](https://github.com/MauriceNino/dashdot/issues/59)
+* **api:** read type and interface speed from host instead of container ([2f0eea4](https://github.com/MauriceNino/dashdot/commit/2f0eea45d4583464b5429e4f6c3d12b56cb5d645)), closes [#105](https://github.com/MauriceNino/dashdot/issues/105)
+* **view:** extract label function to widget ([8718f5e](https://github.com/MauriceNino/dashdot/commit/8718f5e86d13ec9157f1b18baed77f1bdea5ce37))
+
+
+### Features
+
+* **view:** add percentage to storage widget ([e2cc3fa](https://github.com/MauriceNino/dashdot/commit/e2cc3fad305284e4ddd382958b6bb74fb0aedd0b)), closes [#104](https://github.com/MauriceNino/dashdot/issues/104)
+
 # [3.0.0](https://github.com/MauriceNino/dashdot/compare/v2.3.0...v3.0.0) (2022-06-04)
 
 
