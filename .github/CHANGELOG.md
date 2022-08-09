@@ -1,3 +1,18 @@
+## [4.3.9](https://github.com/MauriceNino/dashdot/compare/v4.3.8...v4.3.9) (2022-08-08)
+
+
+### Bug Fixes
+
+* **frontend:** fix web-manifest and sub-routing ([1c119d8](https://github.com/MauriceNino/dashdot/commit/1c119d8099aaebd79a80698f9be50d43c397bc19))
+
+## [4.3.8](https://github.com/MauriceNino/dashdot/compare/v4.3.7...v4.3.8) (2022-08-08)
+
+
+### Bug Fixes
+
+* **api:** add nfs4 to ignored network drives ([b823aab](https://github.com/MauriceNino/dashdot/commit/b823aabcf9469b413f29ee7ea9db252db59f4a5e)), closes [#252](https://github.com/MauriceNino/dashdot/issues/252)
+* **api:** change speedtest interval to every 4 hrs ([a04e1f9](https://github.com/MauriceNino/dashdot/commit/a04e1f9512bbf9807b98f5980b4c816e7727dbfd)), closes [#253](https://github.com/MauriceNino/dashdot/issues/253)
+
 ## [4.3.7](https://github.com/MauriceNino/dashdot/compare/v4.3.6...v4.3.7) (2022-08-01)
 
 ## [4.3.6](https://github.com/MauriceNino/dashdot/compare/v4.3.5...v4.3.6) (2022-07-20)
