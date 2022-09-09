@@ -12,7 +12,7 @@
     "@fortawesome/free-brands-svg-icons": "^5.15.4",
     "@fortawesome/free-solid-svg-icons": "^5.15.4",
     "@fortawesome/react-fontawesome": "^0.1.16",
-    "@nivo/core": "^0.74.0",
+    "@nivo/core": "^0.80.0",
     "@nivo/line": "^0.74.0",
     "@nivo/pie": "^0.74.0",
     "@testing-library/jest-dom": "^5.11.4",
