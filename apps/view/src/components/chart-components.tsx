@@ -5,6 +5,7 @@ import {
   Area,
   AreaChart,
   BarChart,
+  LabelProps,
   Pie,
   PieChart,
   Sector,
@@ -232,6 +233,31 @@ const ToolTipContainer = styled.div`
   gap: 5px;
 `;
 
+export const VertBarStartLabel: FC<
+  LabelProps & {
+    labelRenderer: (value: number) => string;
+  }
+> = props => {
+  const theme = useTheme();
+
+  return (
+    <text
+      x={props.x}
+      y={(props.y as number) + (props.height as number) / 2}
+      width={props.width}
+      height={props.height}
+      offset={props.offset}
+      className='recharts-text recharts-label'
+      text-anchor='start'
+      fill={theme.colors.text}
+    >
+      <tspan x={(props.x as number) + (props.offset as number)} dy='0.355em'>
+        {props.labelRenderer(props.value as number)}
+      </tspan>
+    </text>
+  );
+};
+
 type DefaultVertBarChartProps = {
   height: number;
   width: number;
@@ -247,7 +273,7 @@ export const DefaultVertBarChart: FC<DefaultVertBarChartProps> = ({
   children,
   tooltipRenderer,
 }) => {
-  const barSize = clamp(height / data.length - 20, 40, 60);
+  const barSize = clamp(height / data.length - 20, 10, 60);
   const gap = (data.length - 1) * 10;
   const allBars = barSize * data.length;
   const margin = (height - gap - allBars) / 2;

@@ -1,3 +1,18 @@
+## [4.5.2](https://github.com/MauriceNino/dashdot/compare/v4.5.1...v4.5.2) (2022-09-18)
+
+
+### Bug Fixes
+
+* **view:** storage multi-view sizing + text ([afb66c4](https://github.com/MauriceNino/dashdot/commit/afb66c4801e68076ad4562ba67636f05120f9e9a))
+
+## [4.5.1](https://github.com/MauriceNino/dashdot/compare/v4.5.0...v4.5.1) (2022-09-18)
+
+
+### Bug Fixes
+
+* **view:** label not breaking correctly when green bar is too small ([1cd5e7b](https://github.com/MauriceNino/dashdot/commit/1cd5e7b65f1f6b57eddf4c41a5b89b30752cc498))
+* **view:** show all storage options in widget mode ([6b969c3](https://github.com/MauriceNino/dashdot/commit/6b969c3ab4a21788de5f19b4038b5e995ebbb566)), closes [#385](https://github.com/MauriceNino/dashdot/issues/385)
+
 # [4.5.0](https://github.com/MauriceNino/dashdot/compare/v4.4.0...v4.5.0) (2022-09-17)
 
 
