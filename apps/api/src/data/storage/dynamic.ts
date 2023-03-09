@@ -16,7 +16,7 @@ export class DynamicStorageMapper {
 
   constructor(
     private hostWin32: boolean,
-    private layout: StorageInfo['layout'],
+    private layout: StorageInfo,
     private blocks: Block[],
     private sizes: Size[]
   ) {
@@ -43,15 +43,26 @@ export class DynamicStorageMapper {
   }
 
   private getHasExplicitHost() {
-    return this.layout.some(({ device }) =>
-      this.getIsExplicitHost(this.getBlocksForDevice(device))
-    );
+    return this.getIsExplicitHost(this.validBlocks);
   }
 
   // Helpers
-  private getBlocksForDevice(deviceName: string) {
+  private getBlocksForDisks(disks: StorageInfo[number]['disks']) {
     return this.blocks.filter(({ name, device }) =>
-      this.hostWin32 ? device === deviceName : name.startsWith(deviceName)
+      disks.some(d =>
+        this.hostWin32 ? d.device === device : name.startsWith(d.device)
+      )
+    );
+  }
+  private getBlocksForRaid(raidName: string) {
+    return this.blocks.filter(({ name }) => name.startsWith(raidName));
+  }
+  private getBlocksForXfs(parts: Block[]) {
+    return this.blocks.filter(
+      ({ uuid, type, fsType }) =>
+        type === 'md' &&
+        fsType === 'xfs' &&
+        parts.some(part => part.uuid === uuid)
     );
   }
 
@@ -96,10 +107,7 @@ export class DynamicStorageMapper {
       d => d.mount === fromHost('/')
     );
     return hasNoExplicitMount
-      ? unwrapUsed(
-          this.validSizes.find(({ mount }) => mount === fromHost('/')) ??
-            this.sizes.find(({ mount }) => mount === '/')
-        )
+      ? unwrapUsed(this.validSizes.find(({ mount }) => mount === fromHost('/')))
       : 0;
   }
 
@@ -116,42 +124,39 @@ export class DynamicStorageMapper {
   public getMappedLayout() {
     let hostFound = false;
 
-    return {
-      layout: this.layout
-        .map(({ device, virtual }) => {
-          if (virtual) {
-            const size = this.sizes.find(s => s.fs === device);
-            return size?.used ?? 0;
-          }
+    return this.layout.map(({ disks, virtual, raidName }) => {
+      if (virtual) {
+        const size = this.sizes.find(s => s.fs === disks[0].device);
+        return size?.used ?? 0;
+      }
 
-          const deviceBlocks = this.getBlocksForDevice(device);
-          const isExplicitHost = this.getIsExplicitHost(deviceBlocks);
-          const hasMounts = this.blocksHaveMounts(deviceBlocks);
+      const deviceParts = this.getBlocksForDisks(disks);
+      const deviceBlocks = deviceParts
+        .concat(this.getBlocksForRaid(raidName))
+        .concat(this.getBlocksForXfs(deviceParts));
 
-          if (isExplicitHost) {
-            hostFound = true;
-            return (
-              this.getSizeForBlocks(deviceBlocks) +
-              this.getHostSize(deviceBlocks)
-            );
-          }
+      const isExplicitHost = this.getIsExplicitHost(deviceBlocks);
+      const hasMounts = this.blocksHaveMounts(deviceBlocks);
 
-          const assignAllUnmapped =
-            !this.hasExplicitHost &&
-            !hostFound &&
-            (!hasMounts || this.layout.length === 1);
+      if (isExplicitHost) {
+        hostFound = true;
+        return (
+          this.getSizeForBlocks(deviceBlocks) + this.getHostSize(deviceBlocks)
+        );
+      }
 
-          if (assignAllUnmapped) {
-            hostFound = true;
-            return this.getSizesOfAllUnmapped();
-          }
+      const assignAllUnmapped =
+        !this.hasExplicitHost &&
+        !hostFound &&
+        (!hasMounts || this.layout.length === 1);
 
-          return this.getSizeForBlocks(deviceBlocks);
-        })
-        .map(used => ({
-          load: used,
-        })),
-    };
+      if (assignAllUnmapped) {
+        hostFound = true;
+        return this.getSizesOfAllUnmapped();
+      }
+
+      return this.getSizeForBlocks(deviceBlocks);
+    });
   }
 }
 
@@ -161,7 +166,7 @@ export default async (): Promise<StorageLoad> => {
 
   return new DynamicStorageMapper(
     platformIsWindows(svInfo.os.platform),
-    svInfo.storage.layout,
+    svInfo.storage,
     blocks,
     sizes
   ).getMappedLayout();

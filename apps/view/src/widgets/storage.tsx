@@ -44,57 +44,28 @@ const removeDuplicates = (arr: string[]): string => {
     .join(', ');
 };
 
-const useStorageLayout = (data: StorageInfo, config: Config) => {
-  const override = config.override;
-
-  return useMemo(
+const useDataWithOverrides = (data: StorageInfo, config: Config): StorageInfo =>
+  useMemo(
     () =>
-      data.layout.reduce(
-        (acc, curr, i) => {
-          const existing = acc.find(
-            o =>
-              curr.raidGroup != null &&
-              curr.raidGroup !== '' &&
-              o.raidGroup === curr.raidGroup
-          );
+      data.map(entry => {
+        const sizeDevice = entry.disks.find(
+          disk => config.override.storage_sizes[disk.device] != null
+        )?.device;
 
-          if (existing) {
-            existing.brands = [
-              ...existing.brands,
-              override.storage_brands[i] ?? curr.brand,
-            ];
-            existing.types = [
-              ...existing.types,
-              override.storage_types[i] ?? curr.type,
-            ];
-          } else {
-            acc.push({
-              brands: [override.storage_brands[i] ?? curr.brand],
-              types: [override.storage_types[i] ?? curr.type],
-              size: override.storage_sizes[i] ?? curr.size,
-              raidGroup: curr.raidGroup,
-              virtual: curr.virtual,
-            });
-          }
-
-          return acc;
-        },
-        [] as {
-          brands: string[];
-          types: string[];
-          size: number;
-          raidGroup?: string;
-          virtual?: boolean;
-        }[]
-      ),
-    [
-      data.layout,
-      override.storage_brands,
-      override.storage_sizes,
-      override.storage_types,
-    ]
+        return {
+          ...entry,
+          size: sizeDevice
+            ? config.override.storage_sizes[sizeDevice]
+            : entry.size,
+          disks: entry.disks.map(disk => ({
+            ...disk,
+            brand: config.override.storage_brands[disk.device] ?? disk.brand,
+            type: config.override.storage_types[disk.device] ?? disk.type,
+          })),
+        };
+      }),
+    [data, config]
   );
-};
 
 type StorageChartProps = {
   load?: StorageLoad;
@@ -117,68 +88,35 @@ export const StorageChart: FC<StorageChartProps> = ({
   textSize,
 }) => {
   const theme = useTheme();
-  const layout = useStorageLayout(data, config);
-  const layoutNoVirtual = layout.filter(l => !l.virtual);
+
+  const shownData = useDataWithOverrides(data, config);
+  const layoutNoVirtual = shownData.filter(l => !l.virtual);
 
   const totalSize = layoutNoVirtual.reduce((acc, s) => (acc = acc + s.size), 0);
   const totalUsed =
-    load?.layout
-      .slice(0, layoutNoVirtual.length)
-      .reduce((acc, { load }) => acc + load, 0) ?? 0;
+    load
+      ?.slice(0, layoutNoVirtual.length)
+      .reduce((acc, curr) => acc + curr, 0) ?? 0;
   const totalAvailable = Math.max(0, totalSize - totalUsed);
 
   const usageArr = useMemo(() => {
     if (!multiView) return [];
 
-    let alreadyAdded = 0;
-    return layout
-      .reduce(
-        (acc, curr) => {
-          const diskLoad = curr.brands.reduce(
-            (acc, _, i) =>
-              acc === 0 ? load?.layout[alreadyAdded + i]?.load ?? 0 : acc,
-            0
-          );
-          const diskSize = curr.size;
+    return shownData.map((d, i) => {
+      const used = load?.[i] ?? 0;
+      const available = d.size - used;
+      const realPercent = used / d.size,
+        usedPercent = Math.min(realPercent, 1);
 
-          const existing = acc.find(
-            o =>
-              curr.raidGroup != null &&
-              curr.raidGroup !== '' &&
-              o.raidGroup === curr.raidGroup
-          );
-
-          if (existing) {
-            existing.used = existing.used + diskLoad;
-          } else {
-            acc.push({
-              used: diskLoad,
-              available: diskSize - diskLoad,
-            });
-          }
-
-          alreadyAdded += curr.brands.length;
-          return acc;
-        },
-        [] as {
-          raidGroup?: string;
-          used: number;
-          available: number;
-        }[]
-      )
-      .map(({ used, available }) => {
-        const realPercent = used / (used + available),
-          usedPercent = Math.min(realPercent, 1);
-
-        return {
-          used,
-          available,
-          realPercent,
-          usedPercent,
-          availablePercent: 1 - usedPercent,
-        };
-      });
-  }, [layout, load?.layout, multiView]);
+      return {
+        used,
+        available,
+        realPercent,
+        usedPercent,
+        availablePercent: 1 - usedPercent,
+      };
+    });
+  }, [shownData, load, multiView]);
 
   return (
     <MultiChartContainer layout>
@@ -331,21 +269,21 @@ export const StorageWidget: FC<StorageWidgetProps> = ({
   const theme = useTheme();
   const isMobile = useIsMobile();
   const [page, setPage] = useState(0);
-  const layout = useStorageLayout(data, config);
 
   const [splitView, setSplitView] = useSetting('splitStorage', false);
-  const canHaveSplitView = layout.length > 1;
+  const shownData = useDataWithOverrides(data, config);
+  const canHaveSplitView = shownData.length > 1;
 
   const infos = useMemo(() => {
-    if (layout.length > 1) {
-      return layout.map(s => {
+    if (shownData.length > 1) {
+      return shownData.map(s => {
         const brand = s.virtual
-          ? s.brands[0]
+          ? s.disks[0].brand
           : removeDuplicates(
-              s.brands.map((b, i) => `${b || 'Unknown'} ${s.types[i]}`)
+              s.disks.map(d => `${d.brand || 'Unknown'} ${d.type}`)
             );
         const size = s.size;
-        const raidGroup = s.raidGroup;
+        const raidGroup = s.raidLabel;
 
         return {
           label: s.virtual
@@ -357,10 +295,14 @@ export const StorageWidget: FC<StorageWidgetProps> = ({
         };
       });
     } else {
-      const brand = removeDuplicates(layout[0]?.brands);
-      const size = layout[0]?.size;
-      const type = removeDuplicates(layout[0]?.types);
-      const isRaid = layout[0]?.raidGroup != null;
+      const brand = removeDuplicates(
+        shownData[0]?.disks?.map(({ brand }) => brand)
+      );
+      const size = shownData[0]?.size;
+      const type = removeDuplicates(
+        shownData[0]?.disks?.map(({ type }) => type)
+      );
+      const isRaid = shownData[0]?.raidLabel != null;
 
       return toInfoTable(
         isRaid
@@ -387,19 +329,19 @@ export const StorageWidget: FC<StorageWidgetProps> = ({
           },
           {
             key: 'raid',
-            value: layout[0]?.raidGroup,
+            value: shownData[0]?.raidLabel,
           },
         ]
       );
     }
-  }, [config.storage_label_list, layout]);
+  }, [config.storage_label_list, shownData]);
 
   return (
     <HardwareInfoContainer
       color={theme.colors.storagePrimary}
       heading='Storage'
       infos={infos}
-      infosPerPage={layout.length > 1 ? 3 : 7}
+      infosPerPage={shownData.length > 1 ? 3 : 7}
       icon={faHdd}
       extraContent={
         canHaveSplitView ? (

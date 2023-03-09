@@ -10,6 +10,20 @@ const numNull = (val: string | undefined): number | undefined => {
 const penv = (key: string): string | undefined => process.env[`DASHDOT_${key}`];
 const lst = (item: string): string[] => (item === '' ? [] : item.split(','));
 const numlst = (item: string): number[] => lst(item).map(numNull);
+const kv = <T extends boolean>(
+  inp: string[],
+  toNum: T
+): Record<string, T extends true ? number : string> =>
+  Object.fromEntries(
+    inp.map(p => {
+      const [key, value] = p.split('=');
+      if (toNum) {
+        return [key, +value];
+      } else {
+        return [key, value];
+      }
+    })
+  );
 
 export const CONFIG: Config = {
   port: numNull(penv('PORT')) ?? 3001,
@@ -19,7 +33,8 @@ export const CONFIG: Config = {
   speed_test_from_path: penv('SPEED_TEST_FROM_PATH'),
   fs_device_filter: lst(penv('FS_DEVICE_FILTER') ?? ''),
   fs_type_filter: lst(
-    penv('FS_TYPE_FILTER') ?? 'cifs,9p,fuse.rclone,fuse.mergerfs,nfs4,iso9660'
+    penv('FS_TYPE_FILTER') ??
+      'cifs,9p,fuse.rclone,fuse.mergerfs,nfs4,iso9660,fuse.shfs'
   ),
   fs_virtual_mounts: lst(penv('FS_VIRTUAL_MOUNTS') ?? ''),
   disable_integrations: penv('DISABLE_INTEGRATIONS') === 'true',
@@ -94,9 +109,9 @@ export const CONFIG: Config = {
     network_speed_down: numNull(penv('OVERRIDE_NETWORK_SPEED_DOWN')),
     network_interface_speed: numNull(penv('OVERRIDE_NETWORK_INTERFACE_SPEED')),
     network_public_ip: penv('OVERRIDE_NETWORK_PUBLIC_IP'),
-    storage_brands: lst(penv('OVERRIDE_STORAGE_BRANDS') ?? ''),
-    storage_sizes: numlst(penv('OVERRIDE_STORAGE_SIZES') ?? ''),
-    storage_types: lst(penv('OVERRIDE_STORAGE_TYPES') ?? ''),
+    storage_brands: kv(lst(penv('OVERRIDE_STORAGE_BRANDS') ?? ''), false),
+    storage_sizes: kv(lst(penv('OVERRIDE_STORAGE_SIZES') ?? ''), true),
+    storage_types: kv(lst(penv('OVERRIDE_STORAGE_TYPES') ?? ''), false),
     gpu_brands: lst(penv('OVERRIDE_GPU_BRANDS') ?? ''),
     gpu_models: lst(penv('OVERRIDE_GPU_MODELS') ?? ''),
     gpu_memories: numlst(penv('OVERRIDE_GPU_MEMORIES') ?? ''),

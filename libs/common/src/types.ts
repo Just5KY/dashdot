@@ -21,21 +21,24 @@ export type RamInfo = {
 };
 export type RamLoad = number;
 
+export enum RaidType {
+  ZERO = 0,
+  ONE = 1,
+}
 export type StorageInfo = {
-  layout: {
+  raidType?: RaidType;
+  raidLabel?: string;
+  raidName?: string;
+  size: number;
+  virtual?: boolean;
+
+  disks: {
     device: string;
     brand: string;
-    size: number;
     type: string;
-    raidGroup?: string;
-    virtual?: boolean;
   }[];
-};
-export type StorageLoad = {
-  layout: {
-    load: number;
-  }[];
-};
+}[];
+export type StorageLoad = number[];
 
 export type NetworkInfo = {
   interfaceSpeed: number;
@@ -167,9 +170,9 @@ export type Config = {
     network_speed_down?: number;
     network_interface_speed?: number;
     network_public_ip?: string;
-    storage_brands: string[];
-    storage_types: string[];
-    storage_sizes: number[];
+    storage_brands: Record<string, string>;
+    storage_types: Record<string, string>;
+    storage_sizes: Record<string, number>;
     gpu_brands: string[];
     gpu_models: string[];
     gpu_memories: number[];

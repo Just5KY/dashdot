@@ -7,11 +7,12 @@ import {
   TEST_CASE_10,
   TEST_CASE_11,
   TEST_CASE_12,
-  TEST_CASE_13,
   TEST_CASE_14,
   TEST_CASE_15,
   TEST_CASE_16,
   TEST_CASE_17,
+  TEST_CASE_18,
+  TEST_CASE_19,
   TEST_CASE_2,
   TEST_CASE_3,
   TEST_CASE_4,
@@ -19,7 +20,6 @@ import {
   TEST_CASE_6,
   TEST_CASE_7,
   TEST_CASE_8,
-  TEST_CASE_9,
 } from './test-cases';
 
 const toStorageInp = (inp: TestCase) =>
@@ -28,6 +28,7 @@ const toStorageInp = (inp: TestCase) =>
 describe('Static Info', () => {
   beforeEach(() => {
     CONFIG.running_in_docker = true;
+    CONFIG.fs_device_filter = [];
   });
 
   describe('Storage', () => {
@@ -63,10 +64,6 @@ describe('Static Info', () => {
       const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_8));
       expect(output).to.deep.equal(TEST_CASE_8.layout);
     });
-    it('Test Case 9', () => {
-      const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_9));
-      expect(output).to.deep.equal(TEST_CASE_9.layout);
-    });
     it('Test Case 10', () => {
       const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_10));
       expect(output).to.deep.equal(TEST_CASE_10.layout);
@@ -78,11 +75,6 @@ describe('Static Info', () => {
     it('Test Case 12', () => {
       const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_12));
       expect(output).to.deep.equal(TEST_CASE_12.layout);
-    });
-    it('Test Case 13', () => {
-      CONFIG.running_in_docker = false;
-      const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_13));
-      expect(output).to.deep.equal(TEST_CASE_13.layout);
     });
     it('Test Case 14', () => {
       const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_14));
@@ -101,6 +93,15 @@ describe('Static Info', () => {
     it('Test Case 17', () => {
       const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_17));
       expect(output).to.deep.equal(TEST_CASE_17.layout);
+    });
+    it('Test Case 18', () => {
+      const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_18));
+      expect(output).to.deep.equal(TEST_CASE_18.layout);
+    });
+    it('Test Case 19', () => {
+      CONFIG.fs_device_filter = ['sda'];
+      const output = mapToStorageLayout(false, ...toStorageInp(TEST_CASE_19));
+      expect(output).to.deep.equal(TEST_CASE_19.layout);
     });
   });
 });
