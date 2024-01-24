@@ -67,7 +67,7 @@ export const CpuChart: FC<CpuChartProps> = ({
 }) => {
   const theme = useTheme();
 
-  const latestLoad = load[load.length - 1];
+  const latestLoad = load.at(-1) ?? [];
   const columns = getColumnsForCores(latestLoad?.length ?? 1);
   let chartData: ChartVal[][] = [];
 
@@ -111,9 +111,13 @@ export const CpuChart: FC<CpuChartProps> = ({
 
     chartData = [chartValues];
   }
-  const averageTemp =
+  const averageTemp = () =>
     latestLoad?.reduce((acc, { temp }) => acc + (temp ?? 0), 0) /
     latestLoad?.length;
+  const maxTemp = () =>
+    Math.max(...(latestLoad?.map(({ temp }) => temp ?? 0) ?? []));
+
+  const finalTemp = config.cpu_temps_mode === 'max' ? maxTemp() : averageTemp();
 
   return (
     <MultiChartContainer
@@ -141,18 +145,16 @@ export const CpuChart: FC<CpuChartProps> = ({
               : undefined
           }
           textLeft={
-            multiView || !showPercentages
-              ? undefined
-              : `%: ${((chart[chart.length - 1]?.y as number) ?? 0)?.toFixed(
-                  1
-                )}`
+            showPercentages && !multiView
+              ? `%: ${((chart.at(-1)?.y as number) ?? 0)?.toFixed(1)}`
+              : undefined
           }
           textRight={
-            config.enable_cpu_temps && !multiView && chart.length > 1
-              ? `Ø: ${
+            config.enable_cpu_temps && chart.length > 1 && !multiView
+              ? `${
                   (config.use_imperial
-                    ? celsiusToFahrenheit(averageTemp).toFixed(1)
-                    : averageTemp.toFixed(1)) || '?'
+                    ? celsiusToFahrenheit(finalTemp).toFixed(1)
+                    : finalTemp.toFixed(1)) || '?'
                 } ${config.use_imperial ? '°F' : '°C'}`
               : undefined
           }
@@ -186,7 +188,14 @@ export const CpuWidget: FC<CpuWidgetProps> = ({ load, data, config }) => {
   const isMobile = useIsMobile();
   const override = config.override;
 
-  const [multiCore, setMulticore] = useSetting('multiCore', false);
+  const [multiCore, setMultiCore] = useSetting('multiCore', false);
+  const showToggle = config.cpu_cores_toggle_mode === 'toggle';
+  const showMultiCore =
+    config.cpu_cores_toggle_mode === 'multi-core'
+      ? true
+      : config.cpu_cores_toggle_mode === 'average'
+      ? false
+      : multiCore;
   const frequency = override.cpu_frequency ?? data.frequency;
 
   return (
@@ -212,16 +221,18 @@ export const CpuWidget: FC<CpuWidgetProps> = ({ load, data, config }) => {
       infosPerPage={7}
       icon={faMicrochip}
       extraContent={
-        <WidgetSwitch
-          label='Show All Cores'
-          checked={multiCore}
-          onChange={() => setMulticore(!multiCore)}
-        />
+        showToggle ? (
+          <WidgetSwitch
+            label='Show All Cores'
+            checked={multiCore}
+            onChange={() => setMultiCore(!multiCore)}
+          />
+        ) : undefined
       }
     >
       <CpuChart
         showPercentages={config.always_show_percentages || isMobile}
-        multiView={multiCore}
+        multiView={showMultiCore}
         config={config}
         load={load}
       />

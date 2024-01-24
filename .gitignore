@@ -40,7 +40,6 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
-/speedtest_result
 
 # System Files
 .DS_Store
@@ -49,3 +48,4 @@ Thumbs.db
 # Generated Docusaurus files
 .docusaurus/
 .cache-loader/
+.nx/cache

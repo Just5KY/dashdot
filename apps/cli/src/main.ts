@@ -1,5 +1,5 @@
-import { removePad } from '@dash/common';
 import { exec } from 'child_process';
+import dedent from 'dedent';
 import { existsSync } from 'fs';
 import * as si from 'systeminformation';
 import { inspect, promisify } from 'util';
@@ -7,13 +7,13 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 const execp = promisify(exec);
-const execpnoerr = async (cmd: string): Promise<string | undefined> => {
+const execpnoerr = async (cmd: string) => {
   return execp(cmd)
-    .then(({ stdout }) => stdout)
-    .catch(() => undefined);
+    .then(({ stdout }) => stdout.trim())
+    .catch(() => '');
 };
 
-const inspectObj = (obj: any): string => {
+const inspectObj = (obj: unknown): string => {
   return inspect(obj, {
     showHidden: false,
     depth: null,
@@ -35,27 +35,31 @@ yargs(hideBin(process.argv))
       const nodeVersion = await execpnoerr('node --version');
       const buildInfoJson = await execpnoerr('cat version.json');
       const gitHash = await execpnoerr('git log -1 --format="%H"');
+      const platform = await execpnoerr('uname -a');
 
       const runningInDocker = await execpnoerr(
         'echo $DASHDOT_RUNNING_IN_DOCKER'
       );
-      const buildInfo = JSON.parse(buildInfoJson ?? '{}');
+      const image = await execpnoerr('echo $DASHDOT_IMAGE');
+      const buildInfo = JSON.parse(buildInfoJson || '{}');
       const version = buildInfo.version ?? 'unknown';
       const buildhash = buildInfo.buildhash ?? gitHash;
 
       console.log(
-        removePad`
+        dedent`
           INFO
           =========
-          Yarn: ${yarnVersion.trim()}
-          Node: ${nodeVersion.trim()}
+          Yarn: ${yarnVersion}
+          Node: ${nodeVersion}
           Dash: ${version}
 
           Cwd: ${process.cwd()}
           Hash: ${buildhash}
+          Platform: ${platform}
+          Docker image: ${image}
           In Docker: ${isDocker}
-          In Podman: ${isPodman}
-          In Docker (env): ${runningInDocker}`
+          In Docker (env): ${runningInDocker}
+          In Podman: ${isPodman}`
       );
     }
   )
@@ -95,7 +99,7 @@ yargs(hideBin(process.argv))
         }),
     async args => {
       console.log(
-        removePad`
+        dedent`
           If you were asked to paste the output of this command, please post only the following:
 
           - On GitHub: Everything between (and excluding) the lines
@@ -148,7 +152,7 @@ yargs(hideBin(process.argv))
       }
 
       console.log(
-        removePad`
+        dedent`
           \`\`\`
           
           </details>

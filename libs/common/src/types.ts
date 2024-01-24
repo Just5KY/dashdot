@@ -2,6 +2,8 @@ export type CpuInfo = {
   brand: string;
   model: string;
   cores: number;
+  ecores: number;
+  pcores: number;
   threads: number;
   frequency: number;
 };
@@ -44,6 +46,7 @@ export type NetworkInfo = {
   interfaceSpeed: number;
   speedDown: number;
   speedUp: number;
+  lastSpeedTest: number;
   type: string;
   publicIp: string;
 };
@@ -103,8 +106,10 @@ export type Config = {
   custom_host?: string;
   page_title: string;
   use_imperial: boolean;
-  enable_cpu_temps: boolean;
+  network_speed_as_bytes: boolean;
   always_show_percentages: boolean;
+  enable_cpu_temps: boolean;
+  cpu_temps_mode: 'max' | 'avg';
 
   // Widgets, Labels
   widget_list: ('os' | 'cpu' | 'storage' | 'ram' | 'network' | 'gpu')[];
@@ -130,6 +135,7 @@ export type Config = {
   cpu_widget_min_width: number;
   cpu_shown_datapoints: number;
   cpu_poll_interval: number;
+  cpu_cores_toggle_mode: 'toggle' | 'multi-core' | 'average';
 
   // Storage Widget
   storage_widget_items_per_page: number;
@@ -145,6 +151,7 @@ export type Config = {
 
   // Network Widget
   speed_test_interval: number;
+  speed_test_interval_cron?: string;
   network_widget_grow: number;
   network_widget_min_width: number;
   network_shown_datapoints: number;

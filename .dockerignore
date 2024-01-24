@@ -18,7 +18,9 @@
 **/*.md
 
 # docker
+.git
 .dockerignore
 Dockerfile
 Dockerfile.dev
+Dockerfile.nvidia
 docker-compose.yml
